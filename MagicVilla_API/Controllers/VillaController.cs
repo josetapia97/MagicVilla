@@ -1,4 +1,5 @@
 ﻿using MagicVilla_API.Modelos;
+using MagicVilla_API.Modelos.Dto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,12 +10,12 @@ namespace MagicVilla_API.Controllers
     public class VillaController : ControllerBase
     {
         [HttpGet]
-        public IEnumerable<Villa> GetVillas()
+        public IEnumerable<VillaDto> GetVillas()
         {
-            return new List<Villa>
+            return new List<VillaDto>
             {
-                new Villa {Id=1, Nombre="Vista a la piscina"},
-                new Villa {Id=2, Nombre="Vista a la playa"}
+                new VillaDto {Id=1, Nombre="Vista a la piscina"},
+                new VillaDto {Id=2, Nombre="Vista a la playa"}
             };
         }
 

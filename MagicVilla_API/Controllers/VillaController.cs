@@ -2,6 +2,7 @@
 using MagicVilla_API.Datos;
 using MagicVilla_API.Modelos;
 using MagicVilla_API.Modelos.Dto;
+using MagicVilla_API.Repositorio.IRepositorio;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -17,13 +18,13 @@ namespace MagicVilla_API.Controllers
     {
         private readonly ILogger<VillaController> _logger;
 
-        private readonly ApplicationDbContext _db;
+        private readonly IVillaRepositorio _villarepo;
         private readonly IMapper _mapper;
-        public VillaController(ILogger<VillaController> logger, ApplicationDbContext db, IMapper mapper)
+        public VillaController(ILogger<VillaController> logger, IVillaRepositorio villarepo, IMapper mapper)
         {
 
             _logger = logger;
-            _db = db;
+            _villarepo = villarepo;
             _mapper = mapper;
 
         }
@@ -33,7 +34,7 @@ namespace MagicVilla_API.Controllers
         public async Task<ActionResult<IEnumerable<VillaDto>>> GetVillas()
         {
             _logger.LogInformation("Obtener las villas");
-            IEnumerable<Villa> villalist = await _db.Villas.ToListAsync();
+            IEnumerable<Villa> villalist = await _villarepo.ObtenerTodos();
             return Ok(_mapper.Map<IEnumerable<VillaDto>>(villalist));
         }
 
@@ -49,7 +50,7 @@ namespace MagicVilla_API.Controllers
                 return BadRequest();
             }
             //var villa = VillaStore.villaList.FirstOrDefault(v => v.Id == id);
-            var villa =await _db.Villas.FirstOrDefaultAsync(x => x.Id == id);
+            var villa =await _villarepo.Obtener(x => x.Id == id);
 
             if (villa == null)
             {
@@ -68,7 +69,7 @@ namespace MagicVilla_API.Controllers
             {
                 return BadRequest(ModelState);
             }
-            if(await _db.Villas.FirstOrDefaultAsync(v => v.Nombre.ToLower() == createDto.Nombre.ToLower()) != null)
+            if(await _villarepo.Obtener(v => v.Nombre.ToLower() == createDto.Nombre.ToLower()) != null)
             {
                 ModelState.AddModelError("NombreExiste", "La villa con ese nombre ya existe");
                 return BadRequest(ModelState);
@@ -81,8 +82,7 @@ namespace MagicVilla_API.Controllers
             Villa modelo = _mapper.Map<Villa>(createDto);
             
 
-            await _db.Villas.AddAsync(modelo);
-            await _db.SaveChangesAsync();
+            await _villarepo.Crear(modelo);
             return CreatedAtRoute("GetVilla", new {id = modelo.Id}, modelo);
 
         }
@@ -97,13 +97,12 @@ namespace MagicVilla_API.Controllers
             {
                 return BadRequest();
             }
-            var villa = await _db.Villas.FirstOrDefaultAsync(v => v.Id == id);
+            var villa = await _villarepo.Obtener(v => v.Id == id);
             if(villa == null)
             {
                 return NotFound();
             }
-            _db.Villas.Remove(villa);
-            await _db.SaveChangesAsync();
+            _villarepo.Remover(villa);
             return NoContent();
         }
 
@@ -120,8 +119,7 @@ namespace MagicVilla_API.Controllers
 
             Villa modelo = _mapper.Map<Villa>(updateDto);
             
-            _db.Villas.Update(modelo);
-            await _db.SaveChangesAsync();
+            _villarepo.Actualizar(modelo);
 
             return NoContent();
         }
@@ -135,7 +133,7 @@ namespace MagicVilla_API.Controllers
             {
                 return BadRequest();
             }
-            var villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            var villa = await _villarepo.Obtener(x => x.Id == id,tracked:false);
 
             VillaUpdateDto villaDto = _mapper.Map<VillaUpdateDto>(villa);
 
@@ -152,8 +150,7 @@ namespace MagicVilla_API.Controllers
             Villa modelo = _mapper.Map<Villa>(villaDto);
 
 
-            _db.Villas.Update(modelo);
-            await _db.SaveChangesAsync();
+            _villarepo.Actualizar(modelo);
 
             return NoContent();
         }
